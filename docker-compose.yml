@@ -10,4 +10,4 @@ services:
     command: python cj/cj.py
     volumes:
       - .:/code
-    privileged: true
+    #privileged: true

@@ -37,4 +37,19 @@ Following packages are required for this script [pretty standard requirements] -
 
 There are some more test cases at the end of the file `cj.py` which you should have a look at before using it.
 
-[Please feel free to open bugs]
+Docker Support
+--------------
+
+To run within a container add your own .env to the top level of the project:
+
+```
+CJ_DEV_KEY=MY-KEY-HERE
+```
+
+Then run the container. By default it will return commissions from today.
+
+```
+docker-compose run --rm cj
+```
+
+
