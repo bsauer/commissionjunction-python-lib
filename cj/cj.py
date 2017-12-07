@@ -1,4 +1,4 @@
-# used to get commission data from Commission Junction 
+# used to get commission data from Commission Junction
 # Requires the following parameters -
 
 # Start date
@@ -9,8 +9,9 @@
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import os
 import requests
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import logging
 
 log = logging.getLogger()
@@ -25,98 +26,103 @@ class CJ(object):
 	self.end_date = end_date if end_date else datetime.utcnow()
 	self.start_date = start_date if start_date else (self.end_date + relativedelta(days = -31))
 	self.aids = aids
-    
+
     def _make_url(self, start_date, end_date):
 	url = '%s?date-type=event&start-date=%s&end-date=%s' %(self.URL_ENDPOINT,
 		start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
 	if self.aids:
-	    url = '%s?aids=%s' %(url, ','.join(self.aids))
+            url = '%s?aids=%s' %(url, ','.join(self.aids))
 	return url
-    
+
     def _extract_error(self, response):
-	return BeautifulSoup(response).find('error-message').renderContents()
+	return BeautifulSoup(response, "html.parser").find('error-message').renderContents()
 
     def _get_commission_list(self, response):
-	response = BeautifulSoup(response)
+	response = BeautifulSoup(response, "html.parser")
 	if int(response.find('commissions').get('total-matched')) > 0:
-	    return response.findAll('commission')
+            return response.findAll('commission')
 	else:
-	    return []
+            return []
 
     def _get_aid_amount_map(self, c):
 	return {
 		'aid' : c.find('aid').renderContents(),
 		'commission_amount' : float(c.find('commission-amount').renderContents())
-	       }
+               }
 
     def _make_dates(self):
 	res = []
 	if (self.end_date - self.start_date).days > 31:
-	    res = self._split_dates(start_date = self.start_date, 
-		    end_date = self.end_date)
+            res = self._split_dates(start_date = self.start_date,
+                                    end_date = self.end_date)
 	else:
-	    res = [{'start_date' : self.start_date, 'end_date' : self.end_date}]
+            res = [{'start_date' : self.start_date, 'end_date' : self.end_date}]
 	return res
 
     def _split_dates(self, start_date, end_date):
 	res = []
 	while (end_date - start_date).days > 31:
-	    tmp = {
-		    'end_date' : end_date,
-		    'start_date' : end_date + relativedelta(days = -31)
-		  }
-	    res.append(tmp)
-	    end_date = tmp.get('start_date') + relativedelta(days = -1)
+            tmp = {
+                    'end_date' : end_date,
+                    'start_date' : end_date + relativedelta(days = -31)
+                  }
+            res.append(tmp)
+            end_date = tmp.get('start_date') + relativedelta(days = -1)
 	res.append({'end_date' : end_date, 'start_date' : start_date})
 	return res
-    
+
     '''Call this method to retrieve the commission report
     '''
     def retrieve(self):
 	res = {}
 	dates_l = self._make_dates()
 	for dates in dates_l:
-	    r = requests.get(url = self._make_url(start_date = dates.get('start_date'), 
+            r = requests.get(url = self._make_url(start_date = dates.get('start_date'),
 		end_date = dates.get('end_date')), headers = {'authorization' : self.key})
-	    if r.ok:
+            if r.ok:
 		commission_list = self._get_commission_list(response = r.content)
 		for commission in commission_list:
-		    m = self._get_aid_amount_map(c = commission)
-		    if m.get('aid') in res:
+                    m = self._get_aid_amount_map(c = commission)
+                    if m.get('aid') in res:
 			res[m.get('aid')] = res[m.get('aid')] + m.get('commission_amount')
-		    else:
+                    else:
 			res[m.get('aid')] = m.get('commission_amount')
-	    else:
+            else:
 		raise Exception(self._extract_error(response = r.content))
 	return res
 
 
 if __name__ == '__main__':
-    key = 'YOUR-CJ-KEY' # Replace your key here
+    key = os.environ.get('CJ_DEV_KEY')
 
     # First Test
-    end_date = datetime.utcnow()
-    start_date = datetime.utcnow() + relativedelta(days = -1)
-    log.info('start_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
-    cj = CJ(key = key, end_date = end_date, start_date = start_date, aids = ['10885795', '10694956'])
-    log.info(cj.retrieve())
+    #end_date = datetime.utcnow()
+    end_date = datetime.utcnow() + relativedelta(days = +1)
+    #start_date = datetime.utcnow() + relativedelta(days = -1)
+    start_date = datetime.utcnow()
+    print('start_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+    #cj = CJ(key = key, end_date = end_date, start_date = start_date, aids = ['12973835', '12533544'])
+    cj = CJ(key = key, end_date = end_date, start_date = start_date)
+    print(cj.retrieve())
 
+    '''
     # Second Test
-    log.info('\n\nNo dates specified')
+    print('\n\nNo dates specified')
     cj = CJ(key = key)
-    log.info(cj.retrieve())
+    print(cj.retrieve())
 
     # Third Test
     end_date = datetime.utcnow()
     start_date = datetime.utcnow() + relativedelta(days = -45)
-    log.info('\n\nstart_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+    print('\n\nstart_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
     cj = CJ(key = key, end_date = end_date, start_date = start_date)
-    log.info(cj.retrieve())
+    print(cj.retrieve())
 
     # Fourth Test
-    end_date = datetime.utcnow() + relativedelta(days = -10)
+    end_date = datetime.utcnow() + relativedelta(days = +10)
     start_date = end_date + relativedelta(days = -103)
-    log.info('\n\nstart_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+    print('\n\nstart_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
     cj = CJ(key = key, end_date = end_date, start_date = start_date)
-    log.info(cj.retrieve())
+    print(cj.retrieve())
+    '''
 

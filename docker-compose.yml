@@ -1,0 +1,13 @@
+version: '2'
+services:
+  cj:
+    image: cj
+    build:
+      context: ./base-container
+      dockerfile: Dockerfile
+    environment:
+      CJ_DEV_KEY: ${CJ_DEV_KEY}
+    command: python cj/cj.py
+    volumes:
+      - .:/code
+    privileged: true
