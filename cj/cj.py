@@ -97,9 +97,9 @@ if __name__ == '__main__':
 
     # First Test
     #end_date = datetime.utcnow()
-    end_date = datetime.utcnow() + relativedelta(days = +1)
+    end_date = datetime.now() + relativedelta(days = +1)
     #start_date = datetime.utcnow() + relativedelta(days = -1)
-    start_date = datetime.utcnow()
+    start_date = datetime.now()
     print('start_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
     #cj = CJ(key = key, end_date = end_date, start_date = start_date, aids = ['12973835', '12533544'])
     cj = CJ(key = key, end_date = end_date, start_date = start_date)
