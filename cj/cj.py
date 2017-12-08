@@ -23,7 +23,7 @@ class CJ(object):
     def __init__(self, key, end_date = None, start_date = None, aids = []):
 	assert key, 'developer key is required'
 	self.key = key
-	self.end_date = end_date if end_date else datetime.utcnow()
+	self.end_date = end_date if end_date else datetime.now()
 	self.start_date = start_date if start_date else (self.end_date + relativedelta(days = -31))
 	self.aids = aids
 
@@ -83,6 +83,8 @@ class CJ(object):
 		commission_list = self._get_commission_list(response = r.content)
 		for commission in commission_list:
                     m = self._get_aid_amount_map(c = commission)
+                    print("{aid} : {commission_amount}".format(aid=m.get('aid'),
+                            commission_amount=m.get('commission_amount')))
                     if m.get('aid') in res:
 			res[m.get('aid')] = res[m.get('aid')] + m.get('commission_amount')
                     else:
@@ -96,9 +98,7 @@ if __name__ == '__main__':
     key = os.environ.get('CJ_DEV_KEY')
 
     # First Test
-    #end_date = datetime.utcnow()
     end_date = datetime.now() + relativedelta(days = +1)
-    #start_date = datetime.utcnow() + relativedelta(days = -1)
     start_date = datetime.now()
     print('start_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
     #cj = CJ(key = key, end_date = end_date, start_date = start_date, aids = ['12973835', '12533544'])
@@ -112,14 +112,14 @@ if __name__ == '__main__':
     print(cj.retrieve())
 
     # Third Test
-    end_date = datetime.utcnow()
-    start_date = datetime.utcnow() + relativedelta(days = -45)
+    end_date = datetime.now()
+    start_date = datetime.now() + relativedelta(days = -45)
     print('\n\nstart_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
     cj = CJ(key = key, end_date = end_date, start_date = start_date)
     print(cj.retrieve())
 
     # Fourth Test
-    end_date = datetime.utcnow() + relativedelta(days = +10)
+    end_date = datetime.now() + relativedelta(days = +10)
     start_date = end_date + relativedelta(days = -103)
     print('\n\nstart_date: %s, end_date: %s' %(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
     cj = CJ(key = key, end_date = end_date, start_date = start_date)
